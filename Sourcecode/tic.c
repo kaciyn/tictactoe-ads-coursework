@@ -1,4 +1,7 @@
 # include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 //for ease of storing moves in csv
 struct move
 {
@@ -7,18 +10,34 @@ struct move
     int col;
 };
 
-
 int main(void);
 void start();
-void drawBoard();
+
+void onePlayer();
+struct move autoMove();
+
 void twoPlayers();
+
 struct move getMove();
+int xDo(int round);
+void undo(int round);
+void redo(int round);
+
+void drawBoard();
+void switchPlayer();
 int checkEmpty(int i, int j);
-void setMove(struct move moveToSet);
+void setMove(int round);
 void saveMove(struct move currentMove, int round);
 int checkWin();
+
+void draw();
+void win();
 void endGame();
+
 void saveGameToCSV();
+// move* loadGame();
+void loadGame();
+void replay();
 
 
 //easier to evaluate valid & win positions tho it may be slower than just a 1d char array from 1-9
@@ -26,14 +45,19 @@ void saveGameToCSV();
 //global because i'd be passing it to so many lil functions i think it's worth it
 char board[3][3];
 char currentPlayer;
-struct move moves[9]; //max amount of moves in game
+//could have just saved all of this to the struct?? i dont know it's 5 am
+struct move moves[10]; //max amount of moves in game
+struct move undoneMoves[9]; //max amount of moves in game
 char outputPath[40] = "D:\\Uni\\ADS\\Scripts\\Output\\";
 
 int main(void)
 {
-    printf("Welcome to Tic Tac Toe!\n");
+    //seeds random generator with current time
+    srand(time(0));
 
-    printf("What would you like to do?\n");
+    printf("Welcome to Tic Tac Toe!\n\n");
+
+    printf("What would you like to do?\n\n");
 
     printf("1: Start a New Game\n");
     printf("2: Replay a previous game\n");
@@ -48,7 +72,24 @@ int main(void)
         scanf("%d", &menuSelect);
     }
 
-    start();
+    if (menuSelect == 1)
+    {
+        start();
+    }
+    else if(menuSelect == 2)
+    {
+        // struct move* loadedMoves;
+
+        // loadedMoves = loadGame();
+        loadGame();
+        // for (int i = 0; i < 9; ++i)
+        // {
+        //     moves[i] = loadedMoves[i] ;
+        // }
+        printf("Loaded\n\n");
+
+        replay();
+    }
 
     return 0;
 }
@@ -62,6 +103,8 @@ void start()
     printf("Are you playing with one or two players? (1/2)\n");
 
     int players;
+
+    players = 1;
     scanf("%d", &players);
     printf("\n");
 
@@ -75,8 +118,7 @@ void start()
     if (players == 1)
     {
         printf("One player selected \n");
-
-        //1player
+        onePlayer();
     }
     else
     {
@@ -86,73 +128,236 @@ void start()
 }
 
 
-void drawBoard()
+void onePlayer()
 {
-    printf("\n------\n");
-
-    int i, j;
-    for (i = 0; i < 3; i++)
+    while(currentPlayer != 'X' && currentPlayer != 'O')
     {
-        for (j = 0; j < 3; j++)
-        {
-            printf("%c ", board[i][j]  );
-        }
-        putchar('\n');
+        printf("Which piece would you like to play? (X/O)\n");
+        scanf(" %c", &currentPlayer);
     }
-    printf("------\n\n");
+
+    char player = currentPlayer;
+
+    printf("Would you like to enable undo/redos? (y/n)\n");
+    char enableUndo;
+    scanf(" %c", &enableUndo);
+
+
+    for (int round = 0; round < 9; ++round)
+    {
+        drawBoard();
+
+        //only if enabled so we don't get spammed with constant asks to undo
+        if (enableUndo == 'y')
+        {
+            int action = xDo(round);
+            if (action == 1)
+            {
+                printf("%d\n", round );
+                //rewinds back to undone round
+                round = round - 2;
+                printf("%d\n", round );
+                continue;
+            }
+            else if(action == 2)
+            {
+                continue;
+            }
+        }
+
+
+
+        if (currentPlayer == player)
+        {
+            saveMove(getMove(), round);
+        }
+        else
+        {
+            saveMove(autoMove(), round);
+        }
+
+        setMove(round);
+
+        if (checkWin() == 1)
+        {
+            drawBoard();
+            win();
+        }
+        
+        switchPlayer();
+    }
+    drawBoard();
+
+    draw();
 }
+
+struct move autoMove()
+{
+    printf("Computer's turn\n");
+    struct move randomMove;
+    randomMove.player = currentPlayer;
+
+    while(1)
+    {
+        int upper = 2;
+        int lower = 0;
+
+
+        int row;
+        int col;
+
+        row = (rand() % (upper - lower + 1)) + lower;
+        col = (rand() % (upper - lower + 1)) + lower;
+
+        printf("row: %d\n", row );
+        printf("col: %d\n", col );
+        if(checkEmpty(row, col) == 1)
+        {
+            randomMove.row = row;
+            randomMove.col = col;
+
+            return randomMove;
+        }
+        printf("regenerating move \n");
+
+        // randomMove.row = (rand() % (upper - lower + 1)) + lower;
+        // randomMove.col = (rand() % (upper - lower + 1)) + lower;
+
+        // printf("row: %d\n", randomMove.row );
+        // printf("col: %d\n", randomMove.col );
+        getchar();
+
+    }
+}
+
 
 void twoPlayers()
 {
-    //didn't use a bool since char takes up the same amt of space in practice and i'd have to have an if operation to put the char in anyway
-    //also c doesn't have bOOLS????
-
     while(currentPlayer != 'X' && currentPlayer != 'O')
     {
         printf("Who is playing first? (X/O)\n");
         scanf(" %c", &currentPlayer);
     }
 
+    printf("Would you like to enable undo/redos? (y/n)\n");
+    char enableUndo;
+    scanf(" %c", &enableUndo);
+
+
     for (int round = 0; round < 9; ++round)
     {
-        if (checkWin() == 1)
-        {
-            break;
-        }
-
-        struct move currentMove;
-
-        currentMove = getMove();
-
-        setMove(currentMove);
-
-        saveMove(currentMove, round);
-
-        //switches players after turn ends
-        if (currentPlayer == 'X')
-        {
-            currentPlayer = 'O';
-
-        }
-        else
-        {
-            currentPlayer = 'X';
-        }
         drawBoard();
 
-    }
+        //only if enabled so we don't get spammed with constant asks to undo
+        if (enableUndo == 'y')
+        {
+            int action = xDo(round);
+            if (action == 1)
+            {
+                printf("%d\n", round );
+                //rewinds back to undone round
+                round = round - 2;
+                printf("%d\n", round );
+                continue;
+            }
+            else if(action == 2)
+            {
+                continue;
+            }
+        }
 
-    endGame(currentPlayer);
+        if (checkWin() == 1)
+        {
+            win();
+        }
+
+        saveMove(getMove(), round);
+
+        setMove(round);
+
+        switchPlayer();
+    }
+    draw();
+}
+
+//undo/redo interface
+int xDo(int round)
+{
+    char action = ' ';
+    while(action != 'u' && action != 'r' && action != 'n')
+    {
+        printf("Would you like to undo the last move or redo an undone move? (u/r/n)\n");
+        scanf(" %c", &action);
+    }
+    if (action == 'u')
+    {
+        if(round > 0)
+        {
+            undo(round - 1);
+
+            switchPlayer();
+            return 1;
+        }
+        printf("No moves to undo! Make one first please :)\n");
+    }
+    else if (action == 'r')
+    {
+        if(round < 9 && undoneMoves[round].player != 0)
+        {
+            redo(round);
+            switchPlayer();
+            return 2;
+        }
+        printf("No moves available to redo!\n");
+    }
+    return 0;
+}
+
+void undo(int round)
+{
+    //could add an iterator here to check for the first empty value and store then undoes sequentially But i think a better bet is to actually assign it to the index of the move undone
+    undoneMoves[round] = moves[round];
+
+    moves[round].player = NULL;
+
+    setMove(round);
+
+    moves[round].row = NULL;
+    moves[round].col = NULL;
+
+    printf("Last move undone.\n");
+}
+
+void redo(int round)
+{
+    moves[round] = undoneMoves[round];
+
+    setMove(round);
+
+    printf("Last undone move redone.\n");
+}
+
+
+void switchPlayer()
+{
+    if (currentPlayer == 'X')
+    {
+        currentPlayer = 'O';
+    }
+    else
+    {
+        currentPlayer = 'X';
+    }
 }
 
 struct move getMove()
 {
     int i;
     int j;
-
     printf("%c's turn\n", currentPlayer);
 
     printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
+
     scanf("%d %d", &i, &j);
     //check if in range
     while (checkEmpty(i - 1, j - 1) == 0)
@@ -173,6 +378,7 @@ struct move getMove()
 
     m.row = i - 1;
     m.col = j - 1;
+    //could technically pre-populate the moves with the player as that's decided on picking the first player but this leaves less room for the moves becoming unsynced from player
     m.player = currentPlayer;
 
     return m;
@@ -183,14 +389,18 @@ int checkEmpty(int i, int j)
 {
     if (board[i][j] == 0)
     {
+        printf("space empty \n");
         return 1;
     }
+    printf("space occupied \n");
+
     return 0;
 }
 
-void setMove(struct move moveToSet)
+//initially was passing the move itself but it hink it's better to ref it from the move array so it doesn't get disconnected with the undos and redos
+void setMove(int round)
 {
-    board[moveToSet.row][moveToSet.col] = currentPlayer;
+    board[moves[round].row][moves[round].col] = moves[round].player;
 }
 
 void saveMove(struct move currentMove, int round)
@@ -236,10 +446,23 @@ int checkWin()
     return 0;
 }
 
-void endGame()
+
+void win()
 {
     printf("%c Wins!\n", currentPlayer);
+    endGame();
+}
 
+void draw()
+{
+    printf("It's a draw! Congratulations, you've Both Won.\n");
+
+    endGame();
+}
+
+
+void endGame()
+{
     char save;
     printf("Would you like to save your game? (y/n)\n");
     scanf(" %c", &save);
@@ -266,9 +489,26 @@ void endGame()
     return;
 }
 
+void drawBoard()
+{
+    printf("\n------\n");
+
+    int i, j;
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            printf("%c ", board[i][j]  );
+        }
+        putchar('\n');
+    }
+    printf("------\n\n");
+}
+
+
 void saveGameToCSV()
 {
-    FILE *game;
+    FILE *game = NULL;
     //we're never gonna be saving anywhere Close to a thousand games so
     char gameName[7] = "game";
 
@@ -285,7 +525,6 @@ void saveGameToCSV()
 
         char char_i[3];
         sprintf(char_i, "%d", i);
-        printf("it: %s\n", char_i);
 
         strcat(gameNameBuf, char_i);
 
@@ -326,32 +565,85 @@ void saveGameToCSV()
     fclose(game);
 }
 
-void replay()
+// move* loadGame()
+void loadGame()
 {
     FILE *game;
 
     char path[40];
     strncpy(path, outputPath, 40);
 
-    printf( "Enter the filename of the game you'd like to replay:\n");
+    printf( "Enter the filename of the game you'd like to replay (must end with .csv):\n");
     char gameName[7];
-    scanf(" %s", &gameName)
+    scanf(" %s", &gameName);
 
     strcat(path, gameName);
 
     while (!fopen(path, "r"))
     {
         printf( "Game file with path %s not found, try again. \n", path);
-        scanf(" %s", &gameName)
+        scanf(" %s", &gameName);
 
         strncpy(path, outputPath, 40);
         strcat(path, gameName);
     }
 
-    game=fopen(path, "r");
-    printf( "Loaded game %s\n", gameName);
+    game = fopen(path, "r");
+    printf( "Loaded game file %s\n", gameName);
 
-    printf("Would you like to autoplay or go through moves on enter?\n");
+    //left a bit of breating space
+    char gameBuffer[100];
+    //clda used a for here
+    int i = 0;
+
+    // struct move loadedMoves[20]; //max amount of moves in game
+
+    while(fgets(gameBuffer, 100, game))
+    {
+        //skips first line
+        if (i < 1)
+        {
+            i++;
+            continue;
+        }
+        if (i > 9)
+        {
+            break;
+        }
+        printf("reading line %d\n", i);
+
+        char *playerstr;
+        playerstr = strtok(gameBuffer, ",");
+        moves[i - 1].player = playerstr[0];
+        printf("%c\n", moves[i - 1].player);
+
+        moves[i - 1].row = atoi(strtok(NULL, ","));
+        printf("%d\n", moves[i - 1].row);
+
+        moves[i - 1].col = atoi(strtok(NULL, ","));
+        printf("%d\n", moves[i - 1].col);
+
+
+        i++;
+    }
+
+    //crashes without error after this point, can't for the life of me figure out why
+    int j;
+    while(moves[j].player != 0)
+    {
+        j++;
+    }
+    printf("%d elements in moves\n", j);
+
+
+    printf("Loaded moves from %s\n", gameName);
+
+    // return loadedMoves;
+}
+
+void replay()
+{
+    printf("Would you like to autoplay or go through moves on keypress?\n");
 
     printf("1: Autoplay\n");
     printf("2: On Enter\n");
@@ -366,21 +658,23 @@ void replay()
         scanf("%d", &menuSelect);
     }
 
-    for (int i = 0; i < 9; ++i)
-    {
-        /* code */
-    }
-
     if (menuSelect == 1)
     {
-
+        int i = 0;
+        while(moves[i].player != 0)
+        {
+            setMove(i);
+        }
+        endGame();
     }
-    else{
-
+    else if (menuSelect == 2)
+    {
+        int i = 0;
+        while(moves[i].player != 0)
+        {
+            setMove(i);
+            getchar();
+        }
+        endGame();
     }
-
-}
-
-void autoplay(FILE &game){
-
 }
