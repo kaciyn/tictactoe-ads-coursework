@@ -1,8 +1,0 @@
-Player,Row,Column
-X,0,0
-O,1,0
-X,1,1
-O,2,2
-X,0,1
-O,2,0
-X,2,1
