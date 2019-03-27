@@ -38,18 +38,16 @@ void endGame();
 void saveGameToCSV();
 void loadGame();
 void replay();
-void getReplay();
-
 
 //easier to evaluate valid & win positions tho it may be slower than just a 1d char array from 1-9
 //i'm choosing to use this because i don't Like picking a move by a numbered grid rather than a row and column
 //global because i'd be passing it to so many lil functions i think it's worth it
 char board[3][3];
 char currentPlayer;
-//could have just saved all of this to the struct?? i dont know it's 5 am
-struct move moves[100]; //max amount of moves in game
+
+struct move moves[9]; //max amount of moves in game
 struct move undoneMoves[9]; //max amount of moves in game
-// char outputPath[40] = "D:\\Uni\\ADS\\Scripts\\Output\\";
+
 char outputPath[25] = "..\\Output\\";
 
 int main(void)
@@ -80,19 +78,14 @@ int main(void)
     }
     else if(menuSelect == 2)
     {
-     getReplay();
+        loadGame();
+
+        printf("Loaded\n\n");
+
+        replay();
     }
 
     return 0;
-}
-
-void getReplay()
-{
-    loadGame();
-
-    printf("Loaded\n\n");
-
-    replay();
 }
 
 void start()
@@ -402,7 +395,7 @@ int checkEmpty(int i, int j)
     return 0;
 }
 
-//initially was passing the move itself but it hink it's better to ref it from the move array so it doesn't get disconnected with the undos and redos
+//initially was passing the move itself but i think it's better to ref it from the move array so it doesn't get disconnected with the undos and redos
 void setMove(int round)
 {
     board[moves[round].row][moves[round].col] = moves[round].player;
@@ -436,11 +429,9 @@ int checkWin()
         }
     }
 
-    //i could be implementing some check on whether there are any moves left but
     //diagonals
     for (int i = 0; i < 3; ++i)
     {
-        //some for loop nonsense cld have been done here but it's too much hassle
         if (board[1][1] != 0 &&
                 (
                     (board[1][1] == board[0][0] && board[1][1] == board[2][2]) ||
@@ -499,7 +490,7 @@ void endGame()
 void saveGameToCSV()
 {
     FILE *game = NULL;
-    //we're never gonna be saving anywhere Close to a thousand games so
+    //we're never gonna be saving anywhere Close to a thousand games so an extra 3 is more than enough I think
     char gameName[7] = "game";
 
     char path[25];
@@ -574,7 +565,7 @@ void loadGame()
         printf( "Game file with path %s not found, try again. \n", path);
         scanf(" %s", &gameName);
 
-        strncpy(path, outputPath, 40);
+        strncpy(path, outputPath, 25);
         strcat(path, gameName);
     }
 
@@ -582,11 +573,9 @@ void loadGame()
     printf( "Loaded game file %s\n", gameName);
 
     //left a bit of breating space
-    char gameBuffer[100];
-    //clda used a for here
-    int i = 0;
+    char gameBuffer[90];
 
-    // struct move loadedMoves[20]; //max amount of moves in game
+    int i = 0;
 
     while(1)
     {
