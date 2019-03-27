@@ -19,6 +19,7 @@ struct move autoMove();
 void twoPlayers();
 
 struct move getMove();
+
 int xDo(int round);
 void undo(int round);
 void redo(int round);
@@ -35,9 +36,9 @@ void win();
 void endGame();
 
 void saveGameToCSV();
-// move* loadGame();
 void loadGame();
 void replay();
+void getReplay();
 
 
 //easier to evaluate valid & win positions tho it may be slower than just a 1d char array from 1-9
@@ -46,9 +47,10 @@ void replay();
 char board[3][3];
 char currentPlayer;
 //could have just saved all of this to the struct?? i dont know it's 5 am
-struct move moves[10]; //max amount of moves in game
+struct move moves[100]; //max amount of moves in game
 struct move undoneMoves[9]; //max amount of moves in game
-char outputPath[40] = "D:\\Uni\\ADS\\Scripts\\Output\\";
+// char outputPath[40] = "D:\\Uni\\ADS\\Scripts\\Output\\";
+char outputPath[25] = "..\\Output\\";
 
 int main(void)
 {
@@ -78,20 +80,19 @@ int main(void)
     }
     else if(menuSelect == 2)
     {
-        // struct move* loadedMoves;
-
-        // loadedMoves = loadGame();
-        loadGame();
-        // for (int i = 0; i < 9; ++i)
-        // {
-        //     moves[i] = loadedMoves[i] ;
-        // }
-        printf("Loaded\n\n");
-
-        replay();
+     getReplay();
     }
 
     return 0;
+}
+
+void getReplay()
+{
+    loadGame();
+
+    printf("Loaded\n\n");
+
+    replay();
 }
 
 void start()
@@ -200,15 +201,12 @@ struct move autoMove()
         int upper = 2;
         int lower = 0;
 
-
         int row;
         int col;
 
         row = (rand() % (upper - lower + 1)) + lower;
         col = (rand() % (upper - lower + 1)) + lower;
 
-        // printf("row: %d\n", row );
-        // printf("col: %d\n", col );
         if(checkEmpty(row, col) == 1)
         {
             randomMove.row = row;
@@ -216,15 +214,6 @@ struct move autoMove()
 
             return randomMove;
         }
-        // printf("regenerating move \n");
-
-        // randomMove.row = (rand() % (upper - lower + 1)) + lower;
-        // randomMove.col = (rand() % (upper - lower + 1)) + lower;
-
-        // printf("row: %d\n", randomMove.row );
-        // printf("col: %d\n", randomMove.col );
-        // getchar();
-
     }
 }
 
@@ -280,6 +269,39 @@ void twoPlayers()
     return;
 }
 
+struct move getMove()
+{
+    int i;
+    int j;
+    printf("%c's turn\n", currentPlayer);
+
+    printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
+
+    scanf("%d %d", &i, &j);
+    //check if in range
+    while (checkEmpty(i - 1, j - 1) == 0)
+    {
+        printf("That space is already occupied! Please pick a different one. \n");
+        printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
+        scanf("%d %d", &i, &j);
+    }
+
+    while(i < 1 || i > 3 || j < 1 || j > 3)
+    {
+        printf("Row or column value out of range, please pick values from 1 to 3 \n");
+        printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
+        scanf("%d %d", &i, &j);
+    }
+
+    struct move m;
+
+    m.row = i - 1;
+    m.col = j - 1;
+    //could technically pre-populate the moves with the player as that's decided on picking the first player but this leaves less room for the moves becoming unsynced from player
+    m.player = currentPlayer;
+
+    return m;
+}
 //undo/redo interface
 int xDo(int round)
 {
@@ -338,6 +360,22 @@ void redo(int round)
     printf("Last undone move redone.\n");
 }
 
+void drawBoard()
+{
+    printf("\n------\n");
+
+    int i, j;
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            printf("%c ", board[i][j]  );
+        }
+        putchar('\n');
+    }
+    printf("------\n\n");
+    return;
+}
 
 void switchPlayer()
 {
@@ -351,41 +389,6 @@ void switchPlayer()
     }
     return;
 }
-
-struct move getMove()
-{
-    int i;
-    int j;
-    printf("%c's turn\n", currentPlayer);
-
-    printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
-
-    scanf("%d %d", &i, &j);
-    //check if in range
-    while (checkEmpty(i - 1, j - 1) == 0)
-    {
-        printf("That space is already occupied! Please pick a different one. \n");
-        printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
-        scanf("%d %d", &i, &j);
-    }
-
-    while(i < 1 || i > 3 || j < 1 || j > 3)
-    {
-        printf("Row or column value out of range, please pick values from 1 to 3 \n");
-        printf("Enter the row and column number you want to occupy separated by a space or enter: \n");
-        scanf("%d %d", &i, &j);
-    }
-
-    struct move m;
-
-    m.row = i - 1;
-    m.col = j - 1;
-    //could technically pre-populate the moves with the player as that's decided on picking the first player but this leaves less room for the moves becoming unsynced from player
-    m.player = currentPlayer;
-
-    return m;
-}
-
 //checks if space is free
 int checkEmpty(int i, int j)
 {
@@ -450,14 +453,6 @@ int checkWin()
     return 0;
 }
 
-
-void win()
-{
-    printf("%c Wins!\n", currentPlayer);
-    endGame();
-    return;
-}
-
 void draw()
 {
     printf("It's a draw! Congratulations, you've Both Won.\n");
@@ -466,6 +461,12 @@ void draw()
     return;
 }
 
+void win()
+{
+    printf("%c Wins!\n", currentPlayer);
+    endGame();
+    return;
+}
 
 void endGame()
 {
@@ -495,40 +496,22 @@ void endGame()
     return;
 }
 
-void drawBoard()
-{
-    printf("\n------\n");
-
-    int i, j;
-    for (i = 0; i < 3; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-            printf("%c ", board[i][j]  );
-        }
-        putchar('\n');
-    }
-    printf("------\n\n");
-    return;
-}
-
-
 void saveGameToCSV()
 {
     FILE *game = NULL;
     //we're never gonna be saving anywhere Close to a thousand games so
     char gameName[7] = "game";
 
-    char path[40];
-    strncpy( path, outputPath, 40);
+    char path[25];
+    strncpy( path, outputPath, 25);
 
     for (int i = 0; i < 999; ++i)
     {
         char gameNameBuf[7];
-        char pathBuf[40];
+        char pathBuf[25];
 
         strncpy(gameNameBuf, gameName, 7) ;
-        strncpy(pathBuf, path, 40);
+        strncpy(pathBuf, path, 25);
 
         char char_i[3];
         sprintf(char_i, "%d", i);
@@ -573,13 +556,12 @@ void saveGameToCSV()
     return;
 }
 
-// move* loadGame()
 void loadGame()
 {
     FILE *game;
 
-    char path[40];
-    strncpy(path, outputPath, 40);
+    char path[25];
+    strncpy(path, outputPath, 25);
 
     printf( "Enter the filename of the game you'd like to replay (must end with .csv):\n");
     char gameName[7];
@@ -606,8 +588,14 @@ void loadGame()
 
     // struct move loadedMoves[20]; //max amount of moves in game
 
-    while(fgets(gameBuffer, 100, game))
+    while(1)
     {
+        if (!fgets(gameBuffer, 90, game))
+        {
+            printf("end of file reached\n");
+
+            break;
+        }
         //skips first line
         if (i < 1)
         {
@@ -616,36 +604,42 @@ void loadGame()
         }
         if (i > 9)
         {
+            printf("max # lines reached %d\n", i);
+
             break;
         }
         printf("reading line %d\n", i);
 
         char *playerstr;
+        int j = i - 1;
         playerstr = strtok(gameBuffer, ",");
-        moves[i - 1].player = playerstr[0];
-        printf("%c\n", moves[i - 1].player);
+        moves[j].player = playerstr[0];
+        printf("%c\n", moves[j].player);
 
-        moves[i - 1].row = atoi(strtok(NULL, ","));
-        printf("%d\n", moves[i - 1].row);
+        moves[j].row = atoi(strtok(NULL, ","));
+        printf("%d\n", moves[j].row);
 
         moves[i - 1].col = atoi(strtok(NULL, ","));
-        printf("%d\n", moves[i - 1].col);
-
+        printf("%d\n", moves[j].col);
 
         i++;
     }
+    fclose(game);
 
-    //crashes without error after this point, can't for the life of me figure out why
-    int j;
-    while(moves[j].player != 0)
-    {
-        j++;
-    }
-    printf("%d elements in moves\n", j);
 
 
     printf("Loaded moves from %s\n", gameName);
 
+    //crashes without error after this point, can't for the life of me figure out why
+    int c = 0;
+    while(moves[c].player != 0)
+    {
+        printf("%c\n", moves[c].player);
+        printf("%d\n", moves[c].row);
+        printf("%d\n", moves[c].col);
+        c++;
+
+    }
     return;
 }
 
