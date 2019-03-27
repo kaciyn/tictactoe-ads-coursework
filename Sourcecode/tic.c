@@ -125,6 +125,7 @@ void start()
         printf("Two players selected \n");
         twoPlayers();
     }
+    return;
 }
 
 
@@ -165,8 +166,6 @@ void onePlayer()
             }
         }
 
-
-
         if (currentPlayer == player)
         {
             saveMove(getMove(), round);
@@ -182,13 +181,12 @@ void onePlayer()
         {
             drawBoard();
             win();
+            return;
         }
-        
         switchPlayer();
     }
-    drawBoard();
-
     draw();
+    return;
 }
 
 struct move autoMove()
@@ -209,8 +207,8 @@ struct move autoMove()
         row = (rand() % (upper - lower + 1)) + lower;
         col = (rand() % (upper - lower + 1)) + lower;
 
-        printf("row: %d\n", row );
-        printf("col: %d\n", col );
+        // printf("row: %d\n", row );
+        // printf("col: %d\n", col );
         if(checkEmpty(row, col) == 1)
         {
             randomMove.row = row;
@@ -218,14 +216,14 @@ struct move autoMove()
 
             return randomMove;
         }
-        printf("regenerating move \n");
+        // printf("regenerating move \n");
 
         // randomMove.row = (rand() % (upper - lower + 1)) + lower;
         // randomMove.col = (rand() % (upper - lower + 1)) + lower;
 
         // printf("row: %d\n", randomMove.row );
         // printf("col: %d\n", randomMove.col );
-        getchar();
+        // getchar();
 
     }
 }
@@ -269,6 +267,7 @@ void twoPlayers()
         if (checkWin() == 1)
         {
             win();
+            return;
         }
 
         saveMove(getMove(), round);
@@ -278,6 +277,7 @@ void twoPlayers()
         switchPlayer();
     }
     draw();
+    return;
 }
 
 //undo/redo interface
@@ -326,6 +326,7 @@ void undo(int round)
     moves[round].col = NULL;
 
     printf("Last move undone.\n");
+    return;
 }
 
 void redo(int round)
@@ -348,6 +349,7 @@ void switchPlayer()
     {
         currentPlayer = 'X';
     }
+    return;
 }
 
 struct move getMove()
@@ -389,10 +391,10 @@ int checkEmpty(int i, int j)
 {
     if (board[i][j] == 0)
     {
-        printf("space empty \n");
+        // printf("space empty \n");
         return 1;
     }
-    printf("space occupied \n");
+    // printf("space occupied \n");
 
     return 0;
 }
@@ -401,11 +403,13 @@ int checkEmpty(int i, int j)
 void setMove(int round)
 {
     board[moves[round].row][moves[round].col] = moves[round].player;
+    return;
 }
 
 void saveMove(struct move currentMove, int round)
 {
     moves[round] = currentMove;
+    return;
 }
 
 int checkWin()
@@ -451,6 +455,7 @@ void win()
 {
     printf("%c Wins!\n", currentPlayer);
     endGame();
+    return;
 }
 
 void draw()
@@ -458,6 +463,7 @@ void draw()
     printf("It's a draw! Congratulations, you've Both Won.\n");
 
     endGame();
+    return;
 }
 
 
@@ -483,8 +489,8 @@ void endGame()
         {
             start();
         }
+        break;
     }
-
     printf("Thanks for playing!\n");
     return;
 }
@@ -503,6 +509,7 @@ void drawBoard()
         putchar('\n');
     }
     printf("------\n\n");
+    return;
 }
 
 
@@ -563,6 +570,7 @@ void saveGameToCSV()
     }
 
     fclose(game);
+    return;
 }
 
 // move* loadGame()
@@ -638,7 +646,7 @@ void loadGame()
 
     printf("Loaded moves from %s\n", gameName);
 
-    // return loadedMoves;
+    return;
 }
 
 void replay()
@@ -677,4 +685,5 @@ void replay()
         }
         endGame();
     }
+    return;
 }
