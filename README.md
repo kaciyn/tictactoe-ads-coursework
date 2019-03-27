@@ -1,1 +1,1 @@
-"# yanova_kaci_ads" 
+Repo for the ADS coursework
