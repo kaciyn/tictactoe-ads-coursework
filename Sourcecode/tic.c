@@ -430,16 +430,14 @@ int checkWin()
     }
 
     //diagonals
-    for (int i = 0; i < 3; ++i)
+    if (board[1][1] != 0 &&
+            (
+                (board[1][1] == board[0][0] && board[1][1] == board[2][2]) ||
+                (board[1][1] == board[2][0] && board[1][1] == board[0][2])) )
     {
-        if (board[1][1] != 0 &&
-                (
-                    (board[1][1] == board[0][0] && board[1][1] == board[2][2]) ||
-                    (board[1][1] == board[2][0] && board[1][1] == board[0][2])) )
-        {
-            return 1;
-        }
+        return 1;
     }
+
 
     return 0;
 }
@@ -577,14 +575,8 @@ void loadGame()
 
     int i = 0;
 
-    while(1)
+    while(fgets(gameBuffer, 90, game))
     {
-        if (!fgets(gameBuffer, 90, game))
-        {
-            printf("end of file reached\n");
-
-            break;
-        }
         //skips first line
         if (i < 1)
         {
@@ -613,6 +605,8 @@ void loadGame()
 
         i++;
     }
+    printf("end of file reached\n");
+
     fclose(game);
 
 

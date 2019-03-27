@@ -1,0 +1,7 @@
+Player,Row,Column
+O,1,1
+X,0,1
+O,0,0
+X,0,2
+O,2,2
+X,2,0
