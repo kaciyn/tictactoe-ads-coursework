@@ -1,1 +1,1 @@
-Repo for the ADS coursework
+Repo for the Algorithms & Data Systems coursework (Tic Tac Toe game in C)
